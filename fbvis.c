@@ -115,7 +115,6 @@ static void mainloop(void)
 		case 'd':
 			sleep(getcount(1));
 			break;
-		case ' ':
 		case 'q':
 			term_cleanup();
 			return;
@@ -147,6 +146,14 @@ static void mainloop(void)
 			break;
 		case 'M':
 			head = MAX(0, (rows - fb_rows()) >> 1);
+			break;
+		case ' ':
+		case CTRL('d'):
+			head += fb_rows() * getcount(1) - step;
+			break;
+		case 127:
+		case CTRL('u'):
+			head -= fb_rows() * getcount(1) - step;
 			break;
 		case 'f':
 			if (cols > fb_cols())
