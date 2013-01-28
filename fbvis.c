@@ -31,27 +31,6 @@ static int count;
 static struct termios termios;
 static int fullscreen;
 
-static void drawfs(void)
-{
-	char row[1 << 14];
-	int fsrows = rows * fb_cols() / cols;
-	int rs = head;
-	int bpp = FBM_BPP(fb_mode());
-	int i, j;
-	for (i = 0; i < fb_rows(); i++) {
-		int r = (rs + i) * rows / fsrows;
-		if (r >= rows)
-			memset(row, 0, fb_cols() * bpp);
-		for (j = 0; j < fb_cols() && r < rows; j++) {
-			int c = j * cols / fb_cols();
-			unsigned char *src = (void *) (buf + (r * cols + c) * ch);
-			unsigned int *dst = (void *) (row + j * bpp);
-			*dst = FB_VAL(src[0], src[1], src[2]);
-		}
-		fb_set(i, 0, row, fb_cols());
-	}
-}
-
 static void draw(void)
 {
 	char row[1 << 14];
@@ -70,6 +49,27 @@ static void draw(void)
 			*dst = FB_VAL(src[0], src[1], src[2]);
 		}
 		fb_set(fbr + i - rs, fbc, row, ce - cs);
+	}
+}
+
+static void drawfs(void)
+{
+	char row[1 << 14];
+	int fsrows = rows * fb_cols() / cols;
+	int rs = head * MAX(0, fsrows - fb_rows()) / MAX(1, rows - fb_rows());
+	int bpp = FBM_BPP(fb_mode());
+	int i, j;
+	for (i = 0; i < fb_rows(); i++) {
+		int r = (rs + i) * rows / fsrows;
+		if (r >= rows)
+			memset(row, 0, fb_cols() * bpp);
+		for (j = 0; j < fb_cols() && r < rows; j++) {
+			int c = j * cols / fb_cols();
+			unsigned char *src = (void *) (buf + (r * cols + c) * ch);
+			unsigned int *dst = (void *) (row + j * bpp);
+			*dst = FB_VAL(src[0], src[1], src[2]);
+		}
+		fb_set(i, 0, row, fb_cols());
 	}
 }
 
