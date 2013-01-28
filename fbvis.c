@@ -16,7 +16,7 @@
 #include "lodepng.h"
 
 /* optimized version of fb_val() */
-#define FB_VAL(r, g, b)	(((r) << 16) | ((g) << 8) | (b))
+#define FB_VAL(r, g, b)	fb_val(r, g, b)
 
 #define PAGESTEPS	8
 #define CTRLKEY(x)	((x) - 96)
