@@ -30,6 +30,8 @@ static int head, left;
 static int count;
 static struct termios termios;
 static int fullscreen;
+static char **files;
+static int curfile = -1;
 
 static void draw(void)
 {
@@ -73,6 +75,51 @@ static void drawfs(void)
 	}
 }
 
+unsigned char *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp);
+
+static char *loadstbi(char *path, int *h, int *w, int *ch)
+{
+	return (void *) stbi_load(path, w, h, ch, 3);
+}
+
+static char *loadlode(char *path, int *h, int *w, int *ch)
+{
+	char *s = NULL;
+	*ch = 4;
+	lodepng_decode32_file((void *) &s, (void *) w, (void *) h, path);
+	return s;
+}
+
+static int loadfile(char *path)
+{
+	buf = loadlode(path, &rows, &cols, &ch);
+	if (!buf)
+		buf = loadstbi(path, &rows, &cols, &ch);
+	return !buf;
+}
+
+static void printinfo(void)
+{
+	printf("\rFBVIS:     file:%s\x1b[K\r", files[curfile]);
+	fflush(stdout);
+}
+
+static int nextfile(int dir)
+{
+	if (buf)
+		free(buf);
+	buf = NULL;
+	while (!buf) {
+		curfile += dir;
+		if (curfile < 0 || !files[curfile])
+			return 1;
+		if (loadfile(files[curfile]))
+			printf("failed to load image <%s>\n", files[curfile]);
+	}
+	printinfo();
+	return 0;
+}
+
 static int readkey(void)
 {
 	unsigned char b;
@@ -112,20 +159,6 @@ static void mainloop(void)
 	draw();
 	while ((c = readkey()) != -1) {
 		switch (c) {
-		case 'd':
-			sleep(getcount(1));
-			break;
-		case 'q':
-			term_cleanup();
-			return;
-		case 27:
-			count = 0;
-			break;
-		default:
-			if (isdigit(c))
-				count = count * 10 + c - '0';
-		}
-		switch (c) {
 		case 'j':
 			head += step * getcount(1);
 			break;
@@ -162,7 +195,22 @@ static void mainloop(void)
 		case 'r':
 		case CTRLKEY('l'):
 			break;
+		case CTRLKEY('f'):
+		case CTRLKEY('b'):
+			if (!nextfile(c == CTRLKEY('f') ? getcount(1) : -getcount(1)))
+				break;
+		case 'q':
+			term_cleanup();
+			return;
+		case 'i':
+			printinfo();
 		default:
+			if (c == 'd')
+				sleep(getcount(1));
+			if (isdigit(c))
+				count = count * 10 + c - '0';
+			if (c == 27)
+				count = 0;
 			/* no need to redraw */
 			continue;
 		}
@@ -175,34 +223,15 @@ static void mainloop(void)
 	}
 }
 
-unsigned char *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp);
-
-static char *loadstbi(char *path, int *h, int *w, int *ch)
-{
-	return (void *) stbi_load(path, w, h, ch, 3);
-}
-
-static char *loadlode(char *path, int *h, int *w, int *ch)
-{
-	char *s = NULL;
-	*ch = 4;
-	lodepng_decode32_file((void *) &s, (void *) w, (void *) h, path);
-	return s;
-}
-
 int main(int argc, char *argv[])
 {
 	if (argc < 2) {
 		printf("usage: %s file\n", argv[0]);
 		return 0;
 	}
-	buf = loadlode(argv[1], &rows, &cols, &ch);
-	if (!buf)
-		buf = loadstbi(argv[1], &rows, &cols, &ch);
-	if (!buf) {
-		printf("failed to load image <%s>\n", argv[1]);
+	files = argv + 1;
+	if (nextfile(1))
 		return 1;
-	}
 	if (fb_init())
 		return 1;
 	mainloop();
