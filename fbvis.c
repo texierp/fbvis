@@ -189,8 +189,7 @@ static void mainloop(void)
 			head -= fb_rows() * getcount(1) - step;
 			break;
 		case 'f':
-			if (cols > fb_cols())
-				fullscreen = 1 - fullscreen;
+			fullscreen = 1 - fullscreen;
 			break;
 		case 'r':
 		case CTRLKEY('l'):
