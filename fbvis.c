@@ -79,7 +79,7 @@ unsigned char *stbi_load(char const *filename, int *x, int *y, int *comp, int re
 
 static char *loadstbi(char *path, int *h, int *w, int *ch)
 {
-	return (void *) stbi_load(path, w, h, ch, 3);
+	return (void *) stbi_load(path, w, h, ch, 0);
 }
 
 static char *loadlode(char *path, int *h, int *w, int *ch)
