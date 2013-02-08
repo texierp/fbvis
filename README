@@ -1,0 +1,36 @@
+FBVIS
+=====
+
+Fbvis is a small framebuffer image viewer.  It includes stbi and
+lodepng and does not use external libraries.  Fbvis is short for
+visualize on the framebuffer.
+
+KEYBINDING
+==========
+
+The following table describes fbvis keybinding.  Most of these
+commands accept a numerical prefix that specifies the number of times
+the command should be repeated.
+
+==============	================================================
+KEY		COMMAND
+==============	================================================
+k		scroll up
+j		scroll down
+l		scroll right
+h		scroll left
+H		show image top
+M		show image middle
+L		show image bottom
+^F		next file
+^B		previous file
+backspace, ^U	page up
+space, ^D	page down
+f		fit image width
+i		show filename
+d		sleep one second
+^L, r		redraw
+q		quit fbvis
+digits		specify numerical prefix
+escape, ^[	clear numerical prefix
+==============	================================================
