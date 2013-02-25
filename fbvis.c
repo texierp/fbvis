@@ -24,8 +24,9 @@
 #define MAX(a, b)	((a) > (b) ? (a) : (b))
 #define REGION(a, b, x)	(MIN(b, MAX(x, a)))
 
-static int cols, rows, ch;
-static char *buf;
+static int cols, rows;
+static int ch;
+static unsigned char *buf;
 static int head, left;
 static int count;
 static struct termios termios;
@@ -46,7 +47,7 @@ static void draw(void)
 	int i, j;
 	for (i = rs; i < re; i++) {
 		for (j = cs; j < ce; j++) {
-			unsigned char *src = (void *) (buf + (i * cols + j) * ch);
+			unsigned char *src = buf + (i * cols + j) * ch;
 			unsigned int *dst = (void *) (row + (j - cs) * bpp);
 			*dst = FB_VAL(src[0], src[1], src[2]);
 		}
@@ -67,7 +68,7 @@ static void drawfs(void)
 			memset(row, 0, fb_cols() * bpp);
 		for (j = 0; j < fb_cols() && r < rows; j++) {
 			int c = j * cols / fb_cols();
-			unsigned char *src = (void *) (buf + (r * cols + c) * ch);
+			unsigned char *src = buf + (r * cols + c) * ch;
 			unsigned int *dst = (void *) (row + j * bpp);
 			*dst = FB_VAL(src[0], src[1], src[2]);
 		}
@@ -76,25 +77,18 @@ static void drawfs(void)
 }
 
 unsigned char *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp);
-
-static char *loadstbi(char *path, int *h, int *w, int *ch)
-{
-	return (void *) stbi_load(path, w, h, ch, 0);
-}
-
-static char *loadlode(char *path, int *h, int *w, int *ch)
-{
-	char *s = NULL;
-	*ch = 4;
-	lodepng_decode32_file((void *) &s, (void *) w, (void *) h, path);
-	return s;
-}
+char *ppm_load(char *path, int *h, int *w);
 
 static int loadfile(char *path)
 {
-	buf = loadlode(path, &rows, &cols, &ch);
+	ch = 4;
+	lodepng_decode32_file(&buf, (void *) &cols, (void *) &rows, path);
 	if (!buf)
-		buf = loadstbi(path, &rows, &cols, &ch);
+		buf = stbi_load(path, &cols, &rows, &ch, 0);
+	if (!buf) {
+		ch = 3;
+		buf = (void *) ppm_load(path, &rows, &cols);
+	}
 	return !buf;
 }
 
