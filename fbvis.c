@@ -103,6 +103,7 @@ static int nextfile(int dir)
 	if (buf)
 		free(buf);
 	buf = NULL;
+	head = 0;
 	while (!buf) {
 		curfile += dir;
 		if (curfile < 0 || !files[curfile])
