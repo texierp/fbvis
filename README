@@ -26,7 +26,8 @@ L		show image bottom
 ^B		previous file
 backspace, ^U	page up
 space, ^D	page down
-f		fit image width
+f		fit image height
+w		fit image width
 i		show filename
 d		sleep one second
 ^L, r		redraw

@@ -24,19 +24,47 @@
 #define MAX(a, b)	((a) > (b) ? (a) : (b))
 #define REGION(a, b, x)	(MIN(b, MAX(x, a)))
 
-static int cols, rows;
-static int ch;
-static unsigned char *buf;
-static int head, left;
-static int count;
+static unsigned char *obuf;	/* original image */
+static int ocols, orows;	/* obuf dimensions */
+static int ch;			/* bytes per pixel */
+static unsigned char *buf;	/* zoomed image for framebuffer */
+static int cols, rows;		/* buf dimensions */
+static int czoom;		/* current zoom */
+static int head, left;		/* current viewing position */
+static int count;		/* command prefix */
 static struct termios termios;
-static int fullscreen;
 static char **files;
 static int curfile = -1;
 
+#define ZOOM_ORIG	0
+#define ZOOM_FITHT	1
+#define ZOOM_FITWID	2
+
+static void zoom(int z)
+{
+	int bpp = FBM_BPP(fb_mode());
+	int i, j;
+	int c = 100;
+	if (z == ZOOM_FITHT)
+		c = 100 * fb_rows() / orows;
+	if (z == ZOOM_FITWID)
+		c = 100 * fb_cols() / ocols;
+	czoom = z;
+	cols = ocols * c / 100;
+	rows = orows * c / 100;
+	buf = malloc(rows * cols * bpp);
+	for (i = 0; i < rows; i++) {
+		for (j = 0; j < cols; j++) {
+			unsigned char *src = obuf + (i * 100 / c * ocols +
+							j * 100 / c) * ch;
+			unsigned int *dst = (void *) buf + (i * cols + j) * bpp;
+			*dst = FB_VAL(src[0], src[1], src[2]);
+		}
+	}
+}
+
 static void draw(void)
 {
-	char row[1 << 14];
 	int bpp = FBM_BPP(fb_mode());
 	int rs = head;
 	int re = rs + MIN(rows - rs, fb_rows());
@@ -44,36 +72,9 @@ static void draw(void)
 	int ce = cs + MIN(cols - cs, fb_cols());
 	int fbr = (fb_rows() - (re - rs)) >> 1;
 	int fbc = (fb_cols() - (ce - cs)) >> 1;
-	int i, j;
-	for (i = rs; i < re; i++) {
-		for (j = cs; j < ce; j++) {
-			unsigned char *src = buf + (i * cols + j) * ch;
-			unsigned int *dst = (void *) (row + (j - cs) * bpp);
-			*dst = FB_VAL(src[0], src[1], src[2]);
-		}
-		fb_set(fbr + i - rs, fbc, row, ce - cs);
-	}
-}
-
-static void drawfs(void)
-{
-	char row[1 << 14];
-	int fsrows = rows * fb_cols() / cols;
-	int rs = head * MAX(0, fsrows - fb_rows()) / MAX(1, rows - fb_rows());
-	int bpp = FBM_BPP(fb_mode());
-	int i, j;
-	for (i = 0; i < fb_rows(); i++) {
-		int r = (rs + i) * rows / fsrows;
-		if (r >= rows)
-			memset(row, 0, fb_cols() * bpp);
-		for (j = 0; j < fb_cols() && r < rows; j++) {
-			int c = j * cols / fb_cols();
-			unsigned char *src = buf + (r * cols + c) * ch;
-			unsigned int *dst = (void *) (row + j * bpp);
-			*dst = FB_VAL(src[0], src[1], src[2]);
-		}
-		fb_set(i, 0, row, fb_cols());
-	}
+	int i;
+	for (i = rs; i < re; i++)
+		fb_set(fbr + i - rs, fbc, buf + (i * cols + cs) * bpp, ce - cs);
 }
 
 unsigned char *stbi_load(char const *filename, int *x, int *y, int *comp, int req_comp);
@@ -82,14 +83,14 @@ char *ppm_load(char *path, int *h, int *w);
 static int loadfile(char *path)
 {
 	ch = 4;
-	lodepng_decode32_file(&buf, (void *) &cols, (void *) &rows, path);
-	if (!buf)
-		buf = stbi_load(path, &cols, &rows, &ch, 0);
-	if (!buf) {
+	lodepng_decode32_file(&obuf, (void *) &ocols, (void *) &orows, path);
+	if (!obuf)
+		obuf = stbi_load(path, &ocols, &orows, &ch, 0);
+	if (!obuf) {
 		ch = 3;
-		buf = (void *) ppm_load(path, &rows, &cols);
+		obuf = (void *) ppm_load(path, &orows, &ocols);
 	}
-	return !buf;
+	return !obuf;
 }
 
 static void printinfo(void)
@@ -98,19 +99,28 @@ static void printinfo(void)
 	fflush(stdout);
 }
 
+static void freebufs(void)
+{
+	free(buf);
+	free(obuf);
+	buf = NULL;
+	obuf = NULL;
+}
+
 static int nextfile(int dir)
 {
-	if (buf)
-		free(buf);
-	buf = NULL;
+	freebufs();
 	head = 0;
-	while (!buf) {
+	while (1) {
 		curfile += dir;
 		if (curfile < 0 || !files[curfile])
 			return 1;
-		if (loadfile(files[curfile]))
+		if (!loadfile(files[curfile]))
+			break;
+		else
 			printf("failed to load image <%s>\n", files[curfile]);
 	}
+	zoom(czoom);
 	printinfo();
 	return 0;
 }
@@ -184,7 +194,10 @@ static void mainloop(void)
 			head -= fb_rows() * getcount(1) - step;
 			break;
 		case 'f':
-			fullscreen = 1 - fullscreen;
+			zoom(czoom == ZOOM_FITHT ? ZOOM_ORIG : ZOOM_FITHT);
+			break;
+		case 'w':
+			zoom(czoom == ZOOM_FITWID ? ZOOM_ORIG : ZOOM_FITWID);
 			break;
 		case 'r':
 		case CTRLKEY('l'):
@@ -210,10 +223,7 @@ static void mainloop(void)
 		}
 		head = REGION(0, MAX(0, rows - fb_rows()), head);
 		left = REGION(0, MAX(0, cols - fb_cols()), left);
-		if (fullscreen)
-			drawfs();
-		else
-			draw();
+		draw();
 	}
 }
 
@@ -224,13 +234,15 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	files = argv + 1;
-	if (nextfile(1))
-		return 1;
 	if (fb_init())
 		return 1;
+	if (nextfile(1)) {
+		fb_free();
+		return 1;
+	}
 	mainloop();
 	fb_free();
+	freebufs();
 	printf("\n");
-	free(buf);
 	return 0;
 }
