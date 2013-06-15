@@ -82,6 +82,11 @@ char *ppm_load(char *path, int *h, int *w);
 
 static int loadfile(char *path)
 {
+	FILE *fp = fopen(path, "r");
+	obuf = NULL;
+	if (!fp)
+		return 1;
+	fclose(fp);
 	ch = 4;
 	lodepng_decode32_file(&obuf, (void *) &ocols, (void *) &orows, path);
 	if (!obuf)
