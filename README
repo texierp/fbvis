@@ -28,6 +28,7 @@ backspace, ^U	page up
 space, ^D	page down
 f		fit image height
 w		fit image width
+z		show image in its original size
 i		show filename
 d		sleep one second
 ^L, r		redraw

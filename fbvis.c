@@ -199,10 +199,13 @@ static void mainloop(void)
 			head -= fb_rows() * getcount(1) - step;
 			break;
 		case 'f':
-			zoom(czoom == ZOOM_FITHT ? ZOOM_ORIG : ZOOM_FITHT);
+			zoom(ZOOM_FITHT);
 			break;
 		case 'w':
-			zoom(czoom == ZOOM_FITWID ? ZOOM_ORIG : ZOOM_FITWID);
+			zoom(ZOOM_FITWID);
+			break;
+		case 'z':
+			zoom(ZOOM_ORIG);
 			break;
 		case 'r':
 		case CTRLKEY('l'):
