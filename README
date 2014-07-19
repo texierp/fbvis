@@ -20,19 +20,19 @@ j		scroll down
 l		scroll right
 h		scroll left
 H		show image top
-M		show image middle
+M		show image centre
 L		show image bottom
 ^F		next file
 ^B		previous file
 backspace, ^U	page up
 space, ^D	page down
-f		fit image height
-w		fit image width
+f		zoom to fit image height
+w		zoom to fit image width
 z		show image in its original size
-i		show filename
+i		print file name
 d		sleep one second
 ^L, r		redraw
 q		quit fbvis
-digits		specify numerical prefix
-escape, ^[	clear numerical prefix
+digits		specify a numerical prefix
+escape, ^[	clear the numerical prefix
 ==============	================================================
