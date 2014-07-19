@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -Wall -O2
+CFLAGS = -Wall -O2 -DSTB_IMAGE_IMPLEMENTATION
 LDFLAGS = -lm
 
 all: fbvis
