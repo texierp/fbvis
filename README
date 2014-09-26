@@ -8,9 +8,9 @@ visualize on the framebuffer.
 KEYBINDING
 ==========
 
-The following table describes fbvis keybinding.  Most of these
-commands accept a numerical prefix that specifies the number of times
-the command should be repeated.
+The following table describes fbvis' keybinding.  Most of these
+commands accept a numerical prefix that specifies the number of
+times the command should be repeated.
 
 ==============	================================================
 KEY		COMMAND
@@ -22,8 +22,8 @@ h		scroll left
 H		show image top
 M		show image centre
 L		show image bottom
-^F		next file
-^B		previous file
+^F, J, n	next file
+^B, K, p	previous file
 backspace, ^U	page up
 space, ^D	page down
 f		zoom to fit image height

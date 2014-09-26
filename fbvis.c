@@ -165,7 +165,6 @@ static void mainloop(void)
 	int step = fb_rows() / PAGESTEPS;
 	int hstep = fb_cols() / PAGESTEPS;
 	int c;
-	term_setup();
 	draw();
 	while ((c = readkey()) != -1) {
 		switch (c) {
@@ -211,11 +210,18 @@ static void mainloop(void)
 		case CTRLKEY('l'):
 			break;
 		case CTRLKEY('f'):
+		case 'J':
+		case 'n':
+			if (nextfile(getcount(1)))
+				return;
+			break;
 		case CTRLKEY('b'):
-			if (!nextfile(c == CTRLKEY('f') ? getcount(1) : -getcount(1)))
-				break;
+		case 'K':
+		case 'p':
+			if (nextfile(-getcount(1)))
+				return;
+			break;
 		case 'q':
-			term_cleanup();
 			return;
 		case 'i':
 			printinfo();
@@ -248,7 +254,9 @@ int main(int argc, char *argv[])
 		fb_free();
 		return 1;
 	}
+	term_setup();
 	mainloop();
+	term_cleanup();
 	fb_free();
 	freebufs();
 	printf("\n");
