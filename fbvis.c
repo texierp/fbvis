@@ -191,11 +191,11 @@ static void mainloop(void)
 			head = MAX(0, (rows - fb_rows()) >> 1);
 			break;
 		case ' ':
-		case CTRL('d'):
+		case CTRLKEY('d'):
 			head += fb_rows() * getcount(1) - step;
 			break;
 		case 127:
-		case CTRL('u'):
+		case CTRLKEY('u'):
 			head -= fb_rows() * getcount(1) - step;
 			break;
 		case 'f':
