@@ -1,9 +1,9 @@
 /*
  * fbvis - a framebuffer image viewer
  *
- * Copyright (C) 2013 Ali Gholami Rudi
+ * Copyright (C) 2013-2014 Ali Gholami Rudi
  *
- * This file is released under the modified BSD license.
+ * This file is released under the Modified BSD license.
  */
 #include <ctype.h>
 #include <signal.h>
