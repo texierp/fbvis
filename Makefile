@@ -1,4 +1,4 @@
-CC = cc
+CC ?= cc
 CFLAGS = -Wall -O2 -DSTB_IMAGE_IMPLEMENTATION
 LDFLAGS = -lm
 
